@@ -29,8 +29,9 @@ class Vwmul extends Module {
   for (i <- 0 until 2) {
     for (j <- 0 until 2) {
       for (k <- 0 until 8) {
-        vs_sExtend(i)(j)(k) := io.vs(i)(((k * 8) + 7) + (j * 2), (k * 8) + (j * 64)).asSInt
-        vs_uExtend(i)(j)(k) := io.vs(i)(((k * 8) + 7) + (j * 2), (k * 8) + (j * 64))
+        //vs_sExtend(i)(j)(k) := io.vs(i)(((k * 8) + 7) + (j * 2), (k * 8) + (j * 64)).asSInt
+        vs_sExtend(i)(j)(k) := io.vs(i.U).asSInt
+        vs_uExtend(i)(j)(k) := io.vs(i)((((k * 8) + 7) + (j * 2)), ((k * 8) + (j * 64)))
       }
     }
   }
