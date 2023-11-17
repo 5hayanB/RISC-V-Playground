@@ -1,38 +1,50 @@
-package nucleusrv.components.vu
+package vu
 
 import chisel3._
 import chisel3.util._
 
 // Current config: LMUL = 1, SEW = 8
 class Vwmul extends Module {
+  //noinspection TypeAnnotation
   val io = IO(new Bundle {
     val vs   : Vec[UInt] = Input(Vec(2, UInt(128.W)))
     val vsew : UInt      = Input(UInt(3.W))
     val vlmul: UInt      = Input(UInt(3.W))
     val mulOp: UInt      = Input(UInt(3.W))
 
-    val vd: Vec[Bits] = Output(Vec(2, Bits(128.W)))
+    val vd: Vec[UInt] = Output(Vec(2, UInt(128.W)))
   })
 
-  val vs_sExtend: Vec[Vec[SInt]] = Vec(2, Vec(8, Wire(SInt(16.W))))
-  val vs_uExtend: Vec[Vec[UInt]] = Vec(2, Vec(8, Wire(UInt(16.W))))
-
-  (127 to 0 by -8).toSeq.map(v => (v, v - 7)).zipWithIndex.map(
-    v => for (i <- 0 until 2) {
-      vs_sExtend(i)(v._2) := io.vs(i)(v._1._1, v._1._2).asSInt
-    }
-  )
+  //noinspection ScalaWeakerAccess
+  val vs_sExtend: Seq[Seq[SInt]] = for (_ <- 0 until 2)
+    yield for (_ <- 0 until 8)
+      yield dontTouch(WireInit(0.S(16.W)))
+  //noinspection ScalaWeakerAccess
+  val vs_uExtend: Seq[Seq[UInt]] = for (_ <- 0 until 2)
+    yield for (_ <- 0 until 8)
+      yield WireInit(0.U(16.W))
 
   for (i <- 0 until 2) {
-    io.vd(i) := 0.U
+    var idx: Int = 0
+    for (j <- 63 to 0 by -8) {
+      vs_sExtend(i)(idx) := io.vs(i)(j + (2 * i), (j + (2 * i)) - 7).asSInt
+      vs_uExtend(i)(idx) := io.vs(i)(j + (2 * i), (j + (2 * i)) - 7)
+
+      idx += 1
+    }
   }
-  // extend_vs1(0) := io.vs1(7, 0).asSInt
-  // extend_vs1(1) := io.vs1(15, 8).asSInt
-  // extend_vs1(2) :=
-  
-  // for (i <- 0 until 8) {
-  //   extend_vs1(i) := io.vs1()
-  // }
+
+  for (i <- 0 until 2) {
+    io.vd(i) := MuxLookup(io.vlmul, 0.U)(Seq(
+      1.U -> MuxLookup(io.vsew, 0.U)(Seq(
+        0.U -> MuxLookup(io.mulOp, 0.U)(Seq(
+          1.U -> (for (i <- vs_sExtend.indices) yield (vs_sExtend(1)(i) * vs_sExtend.head(i))((16 * i) + 15, 16 * i)).reduce(
+            (v, w) => Cat(v, w)
+          ) // vwmul.vv
+        ))
+      ))
+    ))
+  }
 
   // io.vd(0) := MuxLookup(io.vlmul, 0.U, Seq(
   //   1.U -> MuxLookup(io.vsew, 0.U, Seq(
