@@ -16,34 +16,49 @@ class Vwmul extends Module {
   })
 
   //noinspection ScalaWeakerAccess
-  val vs_sExtend: Seq[Seq[SInt]] = for (_ <- 0 until 2)
-    yield for (_ <- 0 until 8)
-      yield dontTouch(WireInit(0.S(16.W)))
+  val vs_sExtend: Seq[Seq[Seq[SInt]]] = for (_ <- 0 until 2)
+    yield for (_ <- 0 until 2)
+      yield for (_ <- 0 until 8)
+        yield dontTouch(WireInit(0.S(16.W)))
   //noinspection ScalaWeakerAccess
-  val vs_uExtend: Seq[Seq[UInt]] = for (_ <- 0 until 2)
-    yield for (_ <- 0 until 8)
-      yield WireInit(0.U(16.W))
+  val vs_uExtend: Seq[Seq[Seq[UInt]]] = for (_ <- 0 until 2)
+    yield for (_ <- 0 until 2)
+      yield for (_ <- 0 until 8)
+        yield dontTouch(WireInit(0.U(16.W)))
 
   for (i <- 0 until 2) {
-    var idx: Int = 0
-    for (j <- 63 to 0 by -8) {
-      vs_sExtend(i)(idx) := io.vs(i)(j + (2 * i), (j + (2 * i)) - 7).asSInt
-      vs_uExtend(i)(idx) := io.vs(i)(j + (2 * i), (j + (2 * i)) - 7)
-
-      idx += 1
+    for (j <- 0 until 2) {
+      for (k <- 0 until 8) {
+        vs_sExtend(i)(j)(k) := io.vs(i)(((k * 8) + 7) + (j * 2), (k * 8) + (j * 64)).asSInt
+        vs_uExtend(i)(j)(k) := io.vs(i)(((k * 8) + 7) + (j * 2), (k * 8) + (j * 64))
+      }
     }
   }
 
+  // for (i <- 0 until 2) {
+  //   var idx: Int = 0
+  //   for (j <- 63 to 0 by -8) {
+  //     vs_sExtend(i)(idx) := io.vs(i)(j + (1 * i), (j + (1 * i)) - 7).asSInt
+  //     vs_uExtend(i)(idx) := io.vs(i)(j + (1 * i), (j + (1 * i)) - 7)
+
+  //     idx += 1
+  //   }
+  // }
+
+  // for (i <- 0 until 2) {
+  //   io.vd(i) := MuxLookup(io.vlmul, 0.U)(Seq(
+  //     1.U -> MuxLookup(io.vsew, 0.U)(Seq(
+  //       0.U -> MuxLookup(io.mulOp, 0.U)(Seq(
+  //         1.U -> (for (i <- vs_sExtend.indices) yield (vs_sExtend(1)(i) * vs_sExtend.head(i)).asUInt/*((16 * i) + 15, 16 * i)*/).reduce(
+  //           (v, w) => Cat(v, w)
+  //         ) // vwmul.vv
+  //       ))
+  //     ))
+  //   ))
+  // }
+
   for (i <- 0 until 2) {
-    io.vd(i) := MuxLookup(io.vlmul, 0.U)(Seq(
-      1.U -> MuxLookup(io.vsew, 0.U)(Seq(
-        0.U -> MuxLookup(io.mulOp, 0.U)(Seq(
-          1.U -> (for (i <- vs_sExtend.indices) yield (vs_sExtend(1)(i) * vs_sExtend.head(i))((16 * i) + 15, 16 * i)).reduce(
-            (v, w) => Cat(v, w)
-          ) // vwmul.vv
-        ))
-      ))
-    ))
+    io.vd(i) := 0.U
   }
 
   // io.vd(0) := MuxLookup(io.vlmul, 0.U, Seq(
