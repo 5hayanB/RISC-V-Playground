@@ -19,7 +19,7 @@ class VwmulTest extends AnyFreeSpec with ChiselScalatestTester {
         v.io.vlmul.poke(1.U)
         v.io.mulOp.poke(1.U)
 
-        v.clock.step(5)
+        v.clock.step(10)
     }
   }
 }
