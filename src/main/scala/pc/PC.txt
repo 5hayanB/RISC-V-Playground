@@ -1,0 +1,5 @@
+A PC module which acts as a program counter to point to the address of an instruction.
+It has one output port of 32 bits which represents the program counter. The program counter, a register of 32 bits, calculates
+the address of an instruction by incrementing 4 to itself. The output of the stored value of the program counter
+is sent to the 32 bit program counter port.
+
