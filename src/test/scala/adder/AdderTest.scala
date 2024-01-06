@@ -11,7 +11,7 @@ class AdderTest extends AnyFreeSpec with ChiselScalatestTester {
       a =>
         val in: Seq[Int] = Seq(1, 5)
 
-        for (i <- 0 until in.length) {
+        for (i <- in.indices) {
           a.io.in(i).poke(in(i).U)
         }
 
